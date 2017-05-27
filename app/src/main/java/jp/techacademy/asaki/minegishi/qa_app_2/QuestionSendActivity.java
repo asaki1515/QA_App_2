@@ -219,6 +219,7 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
             //保存が完了したタイミングで何か処理を差し込みたい場合、第2引数にはCompletionListenerクラスを指定
             // 今回は、ActivityがCompletionListenerクラスを実装している＝this
             // CompletionListenerクラスのonCompleteメソッドが実行される
+            // push()を使うと一意のキーが発行されて、その下に値が入る
             genreRef.push().setValue(data, this);
             mProgress.show();
         }

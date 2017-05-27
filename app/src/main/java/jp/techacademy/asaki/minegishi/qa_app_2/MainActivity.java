@@ -13,6 +13,7 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Base64;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -29,6 +30,8 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -37,9 +40,57 @@ public class MainActivity extends AppCompatActivity {
 
     private DatabaseReference mDatabaseReference;
     private DatabaseReference mGenreRef;
+    ////
+    private DatabaseReference mFavoriteRef;
+    ////
     private ListView mListView;
     private ArrayList<Question> mQuestionArrayList;
+    ////
+    private ArrayList<Favorite> mFavoriteArrayList;
+    ////
     private QuestionsListAdapter mAdapter;
+
+    ///////
+    // データに追加・変化があった時に受け取るリスナー
+    private ChildEventListener mFavoriteEventListener = new ChildEventListener() {
+        @Override
+        public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+            HashMap map = (HashMap) dataSnapshot.getValue();
+            String questionUid = (String) map.get("questionUid");
+
+            Favorite favorite = new Favorite(questionUid, dataSnapshot.getKey());
+            mFavoriteArrayList.add(favorite);
+
+        }
+
+        @Override
+        public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+        }
+
+        @Override
+        public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+            for (Favorite favorite: mFavoriteArrayList) {
+                if (dataSnapshot.getKey().equals(favorite.getFavoriteUid())){
+                    mFavoriteArrayList.remove(favorite);
+                    return;
+                }
+            }
+        }
+
+        @Override
+        public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+        }
+
+        @Override
+        public void onCancelled(DatabaseError databaseError) {
+
+        }
+    };
+    //////
+
 
     // データに追加・変化があった時に受け取るリスナー
     private ChildEventListener mEventListener = new ChildEventListener() {
@@ -89,8 +140,8 @@ public class MainActivity extends AppCompatActivity {
         // ここでは質問に対して回答が投稿された時に呼ばれる
         // このメソッドが呼ばれたら変化があった質問に対応するQuestionクラスのインスタンスが保持している回答のArrayListを一旦クリアし、取得した回答を設定
         public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-            HashMap map = (HashMap) dataSnapshot.getValue();
 
+            HashMap map = (HashMap) dataSnapshot.getValue();
             // 変更があったQuestionを探す
             for (Question question: mQuestionArrayList) {
 
@@ -99,9 +150,9 @@ public class MainActivity extends AppCompatActivity {
                         Question question = mQuestionArrayList.get(i);
                 }*/
 
-
                 // 投稿された質問のUIDがFirebaseから取得した質問のUIDと一緒なら
                 if (dataSnapshot.getKey().equals(question.getQuestionUid())) {
+
                     // このアプリで変更がある可能性があるのは回答(Answer)のみ
                     question.getAnswers().clear();
                     // もう一度回答を設定
@@ -138,6 +189,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -172,6 +224,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
         // ナビゲーションドロワーの設定
         // インスタンス取得
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -191,6 +245,14 @@ public class MainActivity extends AppCompatActivity {
         // NavigationView：アプリケーションの標準ナビゲーションメニューを表示
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
 
+        ////
+        if (user == null){
+            Menu menu = navigationView.getMenu();
+            MenuItem favoritemenuItem = menu.findItem(R.id.nav_favorite);
+            favoritemenuItem.setVisible(false);
+            favoritemenuItem.setEnabled(false);
+        }
+
         // setNavigationItemSelectedListener:メニュー項目が選択されたときに通知されるリスナーを設定
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
@@ -209,6 +271,9 @@ public class MainActivity extends AppCompatActivity {
                 } else if (id == R.id.nav_compter) {
                     mToolbar.setTitle("コンピューター");
                     mGenre = 4;
+                } else if (id == R.id.nav_favorite) {
+                    Intent intent = new Intent(getApplicationContext(), FavoriteQuestionListActivity.class);
+                    startActivity(intent);
                 }
 
                 DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -242,9 +307,17 @@ public class MainActivity extends AppCompatActivity {
         mListView = (ListView) findViewById(R.id.listView);
         mAdapter = new QuestionsListAdapter(this);
         mQuestionArrayList = new ArrayList<Question>();
+        mFavoriteArrayList = new ArrayList<Favorite>();
         // 表示を更新するために、アダプターにデータが変更されたことを知らせる
         // ここではデータ更新は行なっていないが、念のためコーディング
         mAdapter.notifyDataSetChanged();
+
+        /////
+        if (user != null) {
+            mFavoriteRef = mDatabaseReference.child(Const.FavoritePATH).child(user.getUid());
+            mFavoriteRef.addChildEventListener(mFavoriteEventListener);
+        }
+        /////
 
 
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -253,6 +326,9 @@ public class MainActivity extends AppCompatActivity {
                 // Questionのインスタンスを渡して質問詳細画面を起動する
                 Intent intent = new Intent(getApplicationContext(), QuestionDetailActivity.class);
                 intent.putExtra("question", mQuestionArrayList.get(position));
+                ///////
+                intent.putExtra("favorite", mFavoriteArrayList);
+                ///////
                 startActivity(intent);
             }
         });

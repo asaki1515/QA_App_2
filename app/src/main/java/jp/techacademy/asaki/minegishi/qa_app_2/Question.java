@@ -10,6 +10,7 @@ public class Question implements Serializable {
     private String mName;   // Firebaseから取得した質問者の名前
     private String mUid;    // Firebaseから取得した質問者のUID
     private String mQuestionUid;   //Firebaseから取得した質問のUID
+
     private int mGenre;   // 質問のジャンル
     private byte[] mBitmapArray;   // Firebaseから取得した画像をbyte型の配列にしたもの
     private ArrayList<Answer> mAnswerArrayList;   // Firebaseから取得した質問のモデルクラスであるAnswerのArrayList
