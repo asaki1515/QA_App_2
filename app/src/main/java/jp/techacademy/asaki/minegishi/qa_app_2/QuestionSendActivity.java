@@ -98,16 +98,6 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
             // data.getData()で取得出来た場合はそのURIを使う
             Uri uri = (data == null || data.getData() == null) ? mPictureUri : data.getData();
 
-            // 上の一行と同じ意味
-            /*Uri uri;
-            if (data == null) {
-                uri = mPictureUri;
-            } else if (data.getData() == null) {
-                uri = mPictureUri;
-            } else {
-                uri = data.getData();
-            }*/
-
             // URIからBitmapを取得する
             Bitmap image;
             // tryブロックの中で例外が発生すると残りの処理は行われずにcatchブロックへ処理が移る
@@ -216,7 +206,7 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
                 }
 
             // dataをFireBaseに保存
-            //保存が完了したタイミングで何か処理を差し込みたい場合、第2引数にはCompletionListenerクラスを指定
+            // 保存が完了したタイミングで何か処理を差し込みたい場合、第2引数にはCompletionListenerクラスを指定
             // 今回は、ActivityがCompletionListenerクラスを実装している＝this
             // CompletionListenerクラスのonCompleteメソッドが実行される
             // push()を使うと一意のキーが発行されて、その下に値が入る
@@ -244,7 +234,6 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
         Intent galleryIntent = new Intent(Intent.ACTION_GET_CONTENT);
         galleryIntent.setType("image/*");
         galleryIntent.addCategory(Intent.CATEGORY_OPENABLE);
-        // Categoryは、インテントが実行するアクションに関する追加の詳細を提供
 
         // カメラで撮影するIntent
         String filename = System.currentTimeMillis() + ".jpg";
@@ -269,6 +258,7 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
         chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{cameraIntent});
         // 上のIntentに対し、chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{cameraIntent});と
         // 2つ目のIntentを指定することで2つのIntentを選択するダイアログが表示される
+
 
         //  startActivityForResult:開いたアクティビティから何かしらの情報を受け取る
         // chooserIntentからどちらを選んだかを受け取りコードをつける

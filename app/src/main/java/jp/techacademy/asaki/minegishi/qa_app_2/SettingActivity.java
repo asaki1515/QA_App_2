@@ -48,7 +48,6 @@ public class SettingActivity extends AppCompatActivity {
                 im.hideSoftInputFromWindow(v.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
 
                 // ログイン済みのユーザーを取得する
-                // FirebaseAuthのインスタンスをまだ取得していないので、getInstance（）を呼び出してインスタンスを取得した後ユーザー情報取得
                 FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
                 if (user == null) {
@@ -79,6 +78,7 @@ public class SettingActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 FirebaseAuth.getInstance().signOut();
+                MainActivity.UserLoaded = false;
                 mNameText.setText("");
                 Snackbar.make(v, "ログアウトしました", Snackbar.LENGTH_LONG).show();
             }

@@ -1,8 +1,6 @@
 package jp.techacademy.asaki.minegishi.qa_app_2;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -13,7 +11,6 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Base64;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -30,28 +27,24 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
+
+    static boolean UserLoaded;
 
     private Toolbar mToolbar;
     private int mGenre = 0;
 
     private DatabaseReference mDatabaseReference;
     private DatabaseReference mGenreRef;
-    ////
     private DatabaseReference mFavoriteRef;
-    ////
     private ListView mListView;
     private ArrayList<Question> mQuestionArrayList;
-    ////
     private ArrayList<Favorite> mFavoriteArrayList;
-    ////
     private QuestionsListAdapter mAdapter;
+    private NavigationView navigationView;
 
-    ///////
-    // データに追加・変化があった時に受け取るリスナー
+    // お気に入りデータに変更があった時に受け取るリスナー
     private ChildEventListener mFavoriteEventListener = new ChildEventListener() {
         @Override
         public void onChildAdded(DataSnapshot dataSnapshot, String s) {
@@ -89,14 +82,12 @@ public class MainActivity extends AppCompatActivity {
 
         }
     };
-    //////
 
 
-    // データに追加・変化があった時に受け取るリスナー
+    // 質問データに変更があった時に受け取るリスナー
     private ChildEventListener mEventListener = new ChildEventListener() {
         @Override
         // 要素（質問）が追加されたとき呼ばれるメソッド
-        // QuestionSendActivityで質問が追加されると呼ばれる
         public void onChildAdded(DataSnapshot dataSnapshot, String s) {
 
             // 追加されたデータをmapに取得
@@ -116,10 +107,9 @@ public class MainActivity extends AppCompatActivity {
 
             ArrayList<Answer> answerArrayList = new ArrayList<Answer>();
             HashMap answerMap = (HashMap) map.get("answers");
-            if (answerMap != null) {  // 回答があれば
-                //
+            if (answerMap != null) {
+
                 for (Object key : answerMap.keySet()) {
-                    // Firebaseから取得した回答のUIDの回答をtempに取得
                     HashMap temp = (HashMap) answerMap.get((String) key);
                     String answerBody = (String) temp.get("body");
                     String answerName = (String) temp.get("name");
@@ -138,17 +128,11 @@ public class MainActivity extends AppCompatActivity {
         @Override
         // 要素（質問）に変化があった時受けるリスナー
         // ここでは質問に対して回答が投稿された時に呼ばれる
-        // このメソッドが呼ばれたら変化があった質問に対応するQuestionクラスのインスタンスが保持している回答のArrayListを一旦クリアし、取得した回答を設定
         public void onChildChanged(DataSnapshot dataSnapshot, String s) {
 
             HashMap map = (HashMap) dataSnapshot.getValue();
             // 変更があったQuestionを探す
             for (Question question: mQuestionArrayList) {
-
-                /*上と同じ意味　mQuerytionArrayの中身を1つずつquestionに入れる
-                for (int i = 0; i < mQuestionArrayList.size(); i++) {
-                        Question question = mQuestionArrayList.get(i);
-                }*/
 
                 // 投稿された質問のUIDがFirebaseから取得した質問のUIDと一緒なら
                 if (dataSnapshot.getKey().equals(question.getQuestionUid())) {
@@ -208,10 +192,9 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 // ログイン済みのユーザーを取得する
-                // FirebaseAuthのインスタンスをまだ取得していないので、getInstance（）を呼び出してインスタンスを取得した後ユーザー情報取得
-                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();// ☆
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
-                if (user == null) { // ☆
+                if (user == null) {
                     // ログインしていなければログイン画面に遷移させる
                     Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
                     startActivity(intent);
@@ -224,36 +207,40 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-
         // ナビゲーションドロワーの設定
-        // インスタンス取得
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
 
         // ActionBarDrawerToggleクラスのコンストラクタ
-        // 第1引数から順に、Activityのインスタンス、DrawerLayoutのインスタンス、ナビゲーションドロワー用のアイコン、
-        // open時のアクセシビリティ、close時のアクセシビリティを指定
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, mToolbar, R.string.app_name, R.string.app_name);
-
         // アクションバーをDrawerLayoutに登録
         drawer.addDrawerListener(toggle);
-
         // アクティビティの状態とActionBarDrawerToggleの状態を同期
         toggle.syncState();
 
-
         // NavigationView：アプリケーションの標準ナビゲーションメニューを表示
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView = (NavigationView) findViewById(R.id.nav_view);
 
-        ////
+        // ログイン状態取得
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
         if (user == null){
+            // ログインされていなかったらお気に入りメニュー非表示
             Menu menu = navigationView.getMenu();
             MenuItem favoritemenuItem = menu.findItem(R.id.nav_favorite);
             favoritemenuItem.setVisible(false);
             favoritemenuItem.setEnabled(false);
+            UserLoaded = false;
+        }else {
+            // ログインされていたらお気に入りメニュー表示
+            Menu menu = navigationView.getMenu();
+            MenuItem favoritemenuItem = menu.findItem(R.id.nav_favorite);
+            favoritemenuItem.setVisible(true);
+            favoritemenuItem.setEnabled(true);
+            UserLoaded = true;
         }
 
-        // setNavigationItemSelectedListener:メニュー項目が選択されたときに通知されるリスナーを設定
+
+        // setNavigationItemSelectedListener:メニュー項目が選択されたときに通知されるリスナー
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(MenuItem item) {
@@ -272,6 +259,8 @@ public class MainActivity extends AppCompatActivity {
                     mToolbar.setTitle("コンピューター");
                     mGenre = 4;
                 } else if (id == R.id.nav_favorite) {
+
+                    // お気に入りメニューが選ばれたら、お気に入り一覧画面へ
                     Intent intent = new Intent(getApplicationContext(), FavoriteQuestionListActivity.class);
                     startActivity(intent);
                 }
@@ -280,7 +269,6 @@ public class MainActivity extends AppCompatActivity {
                 drawer.closeDrawer(GravityCompat.START);
 
                 // 質問のリストをクリアしてから再度Adapterにセットし、AdapterをListViewにセットし直す
-                // リストの中身を消すのではなく、一覧を消す
                 mQuestionArrayList.clear();
                 // アダプターにmQuestionArrayList（データ）をセットする
                 mAdapter.setQuestionArrayList(mQuestionArrayList);
@@ -308,30 +296,50 @@ public class MainActivity extends AppCompatActivity {
         mAdapter = new QuestionsListAdapter(this);
         mQuestionArrayList = new ArrayList<Question>();
         mFavoriteArrayList = new ArrayList<Favorite>();
+
         // 表示を更新するために、アダプターにデータが変更されたことを知らせる
         // ここではデータ更新は行なっていないが、念のためコーディング
         mAdapter.notifyDataSetChanged();
 
-        /////
+        // ログインされていたら、Firebaseとリスナー設定
         if (user != null) {
             mFavoriteRef = mDatabaseReference.child(Const.FavoritePATH).child(user.getUid());
             mFavoriteRef.addChildEventListener(mFavoriteEventListener);
         }
-        /////
 
 
+        // 質問一覧の内、特定の質問をクリックしたら
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 // Questionのインスタンスを渡して質問詳細画面を起動する
                 Intent intent = new Intent(getApplicationContext(), QuestionDetailActivity.class);
                 intent.putExtra("question", mQuestionArrayList.get(position));
-                ///////
                 intent.putExtra("favorite", mFavoriteArrayList);
-                ///////
                 startActivity(intent);
             }
         });
+    }
+
+    // Activity再開時に呼ばれるメソッド
+    @Override
+    public void onResume() {
+        super.onResume();  // Always call the superclass method first
+
+        if (UserLoaded) {
+            // ログイン状態ならお気に入りメニューを表示
+            Menu menu = navigationView.getMenu();
+            MenuItem favoritemenuItem = menu.findItem(R.id.nav_favorite);
+            favoritemenuItem.setVisible(true);
+            favoritemenuItem.setEnabled(true);
+            navigationView.invalidate();
+        } else {
+            // ログインされていないならお気に入りメニューを非表示
+            Menu menu = navigationView.getMenu();
+            MenuItem favoritemenuItem = menu.findItem(R.id.nav_favorite);
+            favoritemenuItem.setVisible(false);
+            favoritemenuItem.setEnabled(false);
+        }
     }
 
     @Override

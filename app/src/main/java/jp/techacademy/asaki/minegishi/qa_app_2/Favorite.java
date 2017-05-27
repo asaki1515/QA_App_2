@@ -5,7 +5,7 @@ import java.io.Serializable;
 public class Favorite implements Serializable{
 
     private String mQuestionUid;   //Firebaseから取得した質問のUID
-    private String mFavoriteUid;
+    private String mFavoriteUid;   //Firebaseから取得したお気に入りのUID
 
     public String getQuestionUid() {
         return mQuestionUid;

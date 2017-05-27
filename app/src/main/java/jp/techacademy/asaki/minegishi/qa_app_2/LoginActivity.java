@@ -34,7 +34,6 @@ public class LoginActivity extends AppCompatActivity {
     ProgressDialog mProgress;
 
     FirebaseAuth mAuth; // FirebaseAuthにサインアップまたはサインインするクラス
-    // OnCompleteListener:処理の完了を受け取るリスナー
     OnCompleteListener<AuthResult> mCreateAccountListener;  // アカウント作成処理の完了を受け取るリスナー
     OnCompleteListener<AuthResult> mLoginListener;  // ログイン処理の完了を受け取るリスナー
     DatabaseReference mDataBaseReference;  // データベースへの読み書きに必要
@@ -92,10 +91,11 @@ public class LoginActivity extends AppCompatActivity {
                     // データベースのUsersPATH="users"の下のuserUidの下をuserRefとする
 
 
-                    if (mIsCreateAccount) {  // アカウント作成がされた後のログインだったなら
+                    if (mIsCreateAccount) {
+                        // アカウント作成がされた後のログインだったなら
+
                         // アカウント作成の時は表示名をFirebaseに保存する
                         String name = mNameEditText.getText().toString();
-
 
                         Map<String, String> data = new HashMap<String, String>();
                         data.put("name", name);
@@ -104,20 +104,17 @@ public class LoginActivity extends AppCompatActivity {
                         // 表示名をPrefarenceにも保存する
                         saveName(name);
 
-                    } else {  // アカウント作成された後のログインでなかったら
+                    } else {
+                        // アカウント作成された後のログインでなかったら
                         // Firebaseからデータを一度だけ取得する場合はDatabaseReferenceクラスが実装しているQueryクラスのaddListenerForSingleValueEventメソッドを使う
-                        // データベース上の要素へのアクセスは、アクセスしたい要素への参照(DatabaseReferenceクラスのインスタンス)に対してValueEventListenerをセットする
                         userRef.addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
-                            // onDataChangメソッドは、この場所のデータのスナップショットを使用して呼び出される
                             public void onDataChange(DataSnapshot snapshot) {
                                 // データベースのuserRefの"name"キーに対応して入っている表示名を持ってきて、Preferenceに保存
                                 Map data = (Map) snapshot.getValue();
                                 saveName((String)data.get("name"));
                             }
                             @Override
-                            // onCancelledメソッドは、このリスナーがサーバーで失敗した場合、またはセキュリティとFirebaseデータベースのルールの結果として
-                            // 削除された場合にトリガーされる。
                             public void onCancelled(DatabaseError firebaseError) {
                             }
                         });
@@ -126,6 +123,8 @@ public class LoginActivity extends AppCompatActivity {
                     // プログレスダイアログを非表示にする
                     mProgress.dismiss();
 
+                    // ログイン状態を知らせる
+                    MainActivity.UserLoaded = true;
                     // Activityを閉じる
                     finish();
 

@@ -1,20 +1,9 @@
 package jp.techacademy.asaki.minegishi.qa_app_2;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Base64;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -26,14 +15,11 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class FavoriteQuestionListActivity extends AppCompatActivity {
-
-    //private int mGenre = 1;
 
     private DatabaseReference mDatabaseReference;
     private DatabaseReference mGenreRef1;
@@ -47,7 +33,7 @@ public class FavoriteQuestionListActivity extends AppCompatActivity {
     private QuestionsListAdapter mAdapter;
 
 
-    // データに追加・変化があった時に受け取るリスナー
+    // お気に入りデータに変更があった時に受け取るリスナー
     private ChildEventListener mFavoriteEventListener = new ChildEventListener() {
         @Override
         public void onChildAdded(DataSnapshot dataSnapshot, String s) {
@@ -93,13 +79,12 @@ public class FavoriteQuestionListActivity extends AppCompatActivity {
 
         }
     };
-    //////
 
-    // データに追加・変化があった時に受け取るリスナー
+
+    // 質問データに変更があった時に受け取るリスナー
+    // 全てのカテゴリー内の質問を手当たり次第読み込んできている
     private ChildEventListener mEventListener1 = new ChildEventListener() {
         @Override
-        // 要素（質問）が追加されたとき呼ばれるメソッド
-        // QuestionSendActivityで質問が追加されると呼ばれる
         public void onChildAdded(DataSnapshot dataSnapshot, String s) {
 
             for (Favorite favorite:mFavoriteArrayList) {
@@ -122,7 +107,7 @@ public class FavoriteQuestionListActivity extends AppCompatActivity {
 
                     ArrayList<Answer> answerArrayList = new ArrayList<Answer>();
                     HashMap answerMap = (HashMap) map.get("answers");
-                    if (answerMap != null) {  // 回答があれば
+                    if (answerMap != null) {
                         //
                         for (Object key : answerMap.keySet()) {
                             // Firebaseから取得した回答のUIDの回答をtempに取得
@@ -144,9 +129,6 @@ public class FavoriteQuestionListActivity extends AppCompatActivity {
         }
 
         @Override
-        // 要素（質問）に変化があった時受けるリスナー
-        // ここでは質問に対して回答が投稿された時に呼ばれる
-        // このメソッドが呼ばれたら変化があった質問に対応するQuestionクラスのインスタンスが保持している回答のArrayListを一旦クリアし、取得した回答を設定
         public void onChildChanged(DataSnapshot dataSnapshot, String s) {
 
             for (Favorite favorite:mFavoriteArrayList) {
@@ -197,11 +179,8 @@ public class FavoriteQuestionListActivity extends AppCompatActivity {
         }
     };
 
-    // データに追加・変化があった時に受け取るリスナー
     private ChildEventListener mEventListener2 = new ChildEventListener() {
         @Override
-        // 要素（質問）が追加されたとき呼ばれるメソッド
-        // QuestionSendActivityで質問が追加されると呼ばれる
         public void onChildAdded(DataSnapshot dataSnapshot, String s) {
 
             for (Favorite favorite:mFavoriteArrayList) {
@@ -224,7 +203,7 @@ public class FavoriteQuestionListActivity extends AppCompatActivity {
 
                     ArrayList<Answer> answerArrayList = new ArrayList<Answer>();
                     HashMap answerMap = (HashMap) map.get("answers");
-                    if (answerMap != null) {  // 回答があれば
+                    if (answerMap != null) {
                         //
                         for (Object key : answerMap.keySet()) {
                             // Firebaseから取得した回答のUIDの回答をtempに取得
@@ -246,9 +225,6 @@ public class FavoriteQuestionListActivity extends AppCompatActivity {
         }
 
         @Override
-        // 要素（質問）に変化があった時受けるリスナー
-        // ここでは質問に対して回答が投稿された時に呼ばれる
-        // このメソッドが呼ばれたら変化があった質問に対応するQuestionクラスのインスタンスが保持している回答のArrayListを一旦クリアし、取得した回答を設定
         public void onChildChanged(DataSnapshot dataSnapshot, String s) {
 
             for (Favorite favorite:mFavoriteArrayList) {
@@ -298,11 +274,8 @@ public class FavoriteQuestionListActivity extends AppCompatActivity {
         }
     };
 
-    // データに追加・変化があった時に受け取るリスナー
     private ChildEventListener mEventListener3 = new ChildEventListener() {
         @Override
-        // 要素（質問）が追加されたとき呼ばれるメソッド
-        // QuestionSendActivityで質問が追加されると呼ばれる
         public void onChildAdded(DataSnapshot dataSnapshot, String s) {
 
             for (Favorite favorite : mFavoriteArrayList) {
@@ -325,7 +298,7 @@ public class FavoriteQuestionListActivity extends AppCompatActivity {
 
                     ArrayList<Answer> answerArrayList = new ArrayList<Answer>();
                     HashMap answerMap = (HashMap) map.get("answers");
-                    if (answerMap != null) {  // 回答があれば
+                    if (answerMap != null) {
                         //
                         for (Object key : answerMap.keySet()) {
                             // Firebaseから取得した回答のUIDの回答をtempに取得
@@ -347,9 +320,6 @@ public class FavoriteQuestionListActivity extends AppCompatActivity {
         }
 
         @Override
-        // 要素（質問）に変化があった時受けるリスナー
-        // ここでは質問に対して回答が投稿された時に呼ばれる
-        // このメソッドが呼ばれたら変化があった質問に対応するQuestionクラスのインスタンスが保持している回答のArrayListを一旦クリアし、取得した回答を設定
         public void onChildChanged(DataSnapshot dataSnapshot, String s) {
 
             for (Favorite favorite:mFavoriteArrayList) {
@@ -400,11 +370,8 @@ public class FavoriteQuestionListActivity extends AppCompatActivity {
         }
     };
 
-    // データに追加・変化があった時に受け取るリスナー
     private ChildEventListener mEventListener4 = new ChildEventListener() {
         @Override
-        // 要素（質問）が追加されたとき呼ばれるメソッド
-        // QuestionSendActivityで質問が追加されると呼ばれる
         public void onChildAdded(DataSnapshot dataSnapshot, String s) {
 
             for (Favorite favorite:mFavoriteArrayList) {
@@ -427,7 +394,7 @@ public class FavoriteQuestionListActivity extends AppCompatActivity {
 
                     ArrayList<Answer> answerArrayList = new ArrayList<Answer>();
                     HashMap answerMap = (HashMap) map.get("answers");
-                    if (answerMap != null) {  // 回答があれば
+                    if (answerMap != null) {
                         //
                         for (Object key : answerMap.keySet()) {
                             // Firebaseから取得した回答のUIDの回答をtempに取得
@@ -449,9 +416,6 @@ public class FavoriteQuestionListActivity extends AppCompatActivity {
         }
 
         @Override
-        // 要素（質問）に変化があった時受けるリスナー
-        // ここでは質問に対して回答が投稿された時に呼ばれる
-        // このメソッドが呼ばれたら変化があった質問に対応するQuestionクラスのインスタンスが保持している回答のArrayListを一旦クリアし、取得した回答を設定
         public void onChildChanged(DataSnapshot dataSnapshot, String s) {
 
             for (Favorite favorite:mFavoriteArrayList) {
@@ -513,15 +477,15 @@ public class FavoriteQuestionListActivity extends AppCompatActivity {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         mDatabaseReference = FirebaseDatabase.getInstance().getReference();
 
-        mGenreRef1 = mDatabaseReference.child(Const.ContentsPATH).child("1");
-        mGenreRef2 = mDatabaseReference.child(Const.ContentsPATH).child("2");
-        mGenreRef3 = mDatabaseReference.child(Const.ContentsPATH).child("3");
-        mGenreRef4 = mDatabaseReference.child(Const.ContentsPATH).child("4");
+        mGenreRef1 = mDatabaseReference.child(Const.ContentsPATH).child("1");  // カテゴリー１
+        mGenreRef2 = mDatabaseReference.child(Const.ContentsPATH).child("2");  // カテゴリー２
+        mGenreRef3 = mDatabaseReference.child(Const.ContentsPATH).child("3");  // カテゴリー３
+        mGenreRef4 = mDatabaseReference.child(Const.ContentsPATH).child("4");  // カテゴリー４
 
-        mGenreRef1.addChildEventListener(mEventListener1);
-        mGenreRef2.addChildEventListener(mEventListener2);
-        mGenreRef3.addChildEventListener(mEventListener3);
-        mGenreRef4.addChildEventListener(mEventListener4);
+        mGenreRef1.addChildEventListener(mEventListener1);  // カテゴリー１のリスナー設定
+        mGenreRef2.addChildEventListener(mEventListener2);  // カテゴリー２のリスナー設定
+        mGenreRef3.addChildEventListener(mEventListener3);  // カテゴリー３のリスナー設定
+        mGenreRef4.addChildEventListener(mEventListener4);  // カテゴリー４のリスナー設定
 
         mFavoriteRef = mDatabaseReference.child(Const.FavoritePATH).child(user.getUid());
         mFavoriteRef.addChildEventListener(mFavoriteEventListener);
@@ -547,9 +511,7 @@ public class FavoriteQuestionListActivity extends AppCompatActivity {
                 // Questionのインスタンスを渡して質問詳細画面を起動する
                 Intent intent = new Intent(getApplicationContext(), QuestionDetailActivity.class);
                 intent.putExtra("question", mQuestionArrayList.get(position));
-                ///////
                 intent.putExtra("favorite", mFavoriteArrayList);
-                ///////
                 startActivity(intent);
             }
         });

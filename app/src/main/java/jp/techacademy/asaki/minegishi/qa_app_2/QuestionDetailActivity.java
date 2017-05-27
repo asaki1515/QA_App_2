@@ -125,10 +125,12 @@ public class QuestionDetailActivity extends AppCompatActivity {
             mFavoriteButton.setVisibility(View.INVISIBLE);
             mFavoriteButton.setEnabled(false);
         }else {
+            // ログインしていればmFavoriteButton有効
             mFavoriteButton.setVisibility(View.VISIBLE);
             mFavoriteButton.setEnabled(true);
 
             for (Favorite favorite:mFavorite) {
+                // お気に入りデータに自身と同じQuestionUidがあれば
                 if (favorite.getQuestionUid().equals(mQuestion.getQuestionUid())) {
                     mFavoriteButton.setText("★");
                     Flag = 1;
@@ -143,7 +145,9 @@ public class QuestionDetailActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if (Flag == 1) {
+                // mFavoriteButtonが★状態なら
                     for (Favorite favorite : mFavorite) {
+                        // お気に入りデータに自身と同じQuestionUidがあれば自身をお気に入りデータから削除
                         if (favorite.getQuestionUid().equals(mQuestion.getQuestionUid())) {
                             mFavorite.remove(favorite);
                             FavoriteRef.child(favorite.getFavoriteUid()).removeValue();
@@ -153,6 +157,7 @@ public class QuestionDetailActivity extends AppCompatActivity {
                         }
                     }
                 }else {
+                    // mFavoriteButtonが☆状態なら新しく自身のQuestionUid追加
                     String key = FavoriteRef.push().getKey();
                     Map<String, Object> data = new HashMap<String, Object>();
                     data.put(key + "/questionUid/", mQuestion.getQuestionUid());
