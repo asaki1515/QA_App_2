@@ -17,19 +17,27 @@ import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -39,16 +47,29 @@ import java.util.Map;
 public class QuestionSendActivity extends AppCompatActivity implements View.OnClickListener, DatabaseReference.CompletionListener {
 
     private static final int PERMISSIONS_REQUEST_CODE = 100;
+    private static final int PERMISSIONS_REQUEST_CODE2 = 101;
     private static final int CHOOSER_REQUEST_CODE = 100;
+    private static final int INTENT_REQUEST_CODE = 101;
 
     private ProgressDialog mProgress;
     private EditText mTitleText;
     private EditText mBodyText;
+    private EditText mLink;///////
+    private EditText mURLText;////////
+    private EditText mPDFText;//////
     private ImageView mImageView;
     private Button mSendButton;
+    private Button mPDFButton;//----
 
     private int mGenre;
+    private int mFileCheck = 0;
+    private String PDFtitle = "";
     private Uri mPictureUri;
+    //////
+    private FirebaseStorage storage;
+    private StorageReference storageRef;
+    private StorageReference riversRef;//////
+    /////
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,19 +85,31 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
         mGenre = extras.getInt("genre");
 
         // UIの準備
-        setTitle("質問作成");
+        setTitle("作り方作成");
 
         mTitleText = (EditText) findViewById(R.id.titleText);
         mBodyText = (EditText) findViewById(R.id.bodyText);
+        mLink = (EditText) findViewById(R.id.linkEditText);/////
+        mURLText = (EditText) findViewById(R.id.urlEditText);//////
+        mPDFText = (EditText) findViewById(R.id.PDFEditText);//----
 
         mSendButton = (Button) findViewById(R.id.sendButton);
         mSendButton.setOnClickListener(this);
+
+        mPDFButton = (Button) findViewById(R.id.PDFButton);//----
+        mPDFButton.setOnClickListener(this);//----
+
 
         mImageView = (ImageView) findViewById(R.id.imageView);
         mImageView.setOnClickListener(this);
 
         mProgress = new ProgressDialog(this);
         mProgress.setMessage("投稿中...");
+
+        /////
+        storage = FirebaseStorage.getInstance();
+        storageRef = storage.getReferenceFromUrl("gs://qaapp2-13ceb.appspot.com");
+        /////
 
     }
 
@@ -124,7 +157,40 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
             mImageView.setImageBitmap(resizedImage);
 
             mPictureUri = null;
-        }
+
+        }else if (requestCode == INTENT_REQUEST_CODE){//---
+
+            if (resultCode == RESULT_OK){
+                Uri uri = null;
+                if (data != null) {
+                    uri = data.getData();
+                }
+
+                mPDFText.setEnabled(false);
+                mPDFText.setFocusable(false);
+
+                /////
+                riversRef = storageRef.child(PDFtitle);/////
+                UploadTask uploadTask = riversRef.putFile(uri);
+                mFileCheck = 1;
+
+                // Register observers to listen for when the download is done or if it fails
+                uploadTask.addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception exception) {
+                        // Handle unsuccessful uploads
+                    }
+                }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download URL.
+                        //Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                    }
+                });
+                /////
+
+            }
+        }//----
     }
 
     @Override
@@ -163,6 +229,9 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
             // タイトルと本文を取得する
             String title = mTitleText.getText().toString();
             String body = mBodyText.getText().toString();
+            String link = mLink.getText().toString();
+            String url = mURLText.getText().toString();
+            Uri uri = null;/////
 
                 if (title.length() == 0) {
                     // 質問が入力されていない時はエラーを表示するだけ
@@ -172,9 +241,18 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
 
                 if (body.length() == 0) {
                     // 質問が入力されていない時はエラーを表示するだけ
-                    Snackbar.make(v, "質問を入力して下さい", Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(v, "説明を入力して下さい", Snackbar.LENGTH_LONG).show();
                     return;
                 }
+
+                if (PDFtitle.length() == 0){
+                    PDFtitle = "";
+                }
+                // ファイル名は指定したものの、ファイルをアップロードしなかった場合はファイル名削除
+                if (mFileCheck == 0){
+                    PDFtitle = "";
+                }
+
 
             // Preferenceから名前を取る
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
@@ -183,6 +261,9 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
             data.put("title", title);
             data.put("body", body);
             data.put("name", name);
+            data.put("link", link);
+            data.put("url", url);//////
+            data.put("file", PDFtitle);/////
 
             // 添付画像を取得する
             BitmapDrawable drawable = (BitmapDrawable) mImageView.getDrawable();
@@ -212,7 +293,35 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
             // push()を使うと一意のキーが発行されて、その下に値が入る
             genreRef.push().setValue(data, this);
             mProgress.show();
-        }
+
+        }else if (v==mPDFButton){//----
+
+            PDFtitle = mPDFText.getText().toString();
+            if(PDFtitle.length() == 0){
+                Snackbar.make(v, "ファイルのタイトルを入力して下さい", Snackbar.LENGTH_LONG).show();
+                return;
+            }else if (PDFtitle.length() > 0 && PDFtitle.length() < 5){
+                Snackbar.make(v, "ファイルタイトルは5文字以上で入力してください", Snackbar.LENGTH_LONG).show();
+                return;
+            }else {
+                // Android 6.0以降の場合
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    // パーミッションの許可状態を確認する
+                    if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                        // 許可されている
+                        fileUpload();
+                    } else {
+                        // 許可されていないので許可ダイアログを表示する
+                        requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSIONS_REQUEST_CODE2);
+
+                        return;
+                    }
+                    // Android 5系以下の場合
+                } else {
+                    fileUpload();
+                }
+            }
+        }//----
     }
 
     @Override
@@ -223,6 +332,13 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // ユーザーが許可したとき
                     showChooser();
+                }
+                return;
+            }
+            case PERMISSIONS_REQUEST_CODE2: {
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // ユーザーが許可したとき
+                    fileUpload();
                 }
                 return;
             }
@@ -242,8 +358,9 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
         // 画像のタイトルに上で取得した撮影時間名を入れる
         values.put(MediaStore.Images.Media.TITLE, filename);
         // 画像のタイプにjpegを入れる
-        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");//ここを音楽ファイル、PDF
         // insert():行を追加。戻り値は新たに追加された行のURI.
+
         mPictureUri = getContentResolver()
                 .insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
 
@@ -265,6 +382,13 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
         startActivityForResult(chooserIntent, CHOOSER_REQUEST_CODE);
     }
 
+    private void fileUpload(){
+        Intent galleryIntent = new Intent(Intent.ACTION_GET_CONTENT);
+        galleryIntent.setType("*/*");
+        galleryIntent.addCategory(Intent.CATEGORY_OPENABLE);
+
+        startActivityForResult(galleryIntent, INTENT_REQUEST_CODE);
+    }
     @Override
     public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
         mProgress.dismiss();

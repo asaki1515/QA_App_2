@@ -103,8 +103,8 @@ public class QuestionDetailActivity extends AppCompatActivity {
         mQuestion = (Question) extras.get("question");
         mFavorite = (ArrayList<Favorite>) extras.get("favorite");
 
-        setTitle(mQuestion.getTitle());
-
+        //setTitle(mQuestion.getTitle());
+        setTitle("");/////////
 
         // ListViewの準備
         mListView = (ListView) findViewById(R.id.listView);
