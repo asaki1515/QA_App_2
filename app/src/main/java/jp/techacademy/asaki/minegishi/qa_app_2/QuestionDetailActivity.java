@@ -10,6 +10,8 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Base64;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
@@ -40,9 +42,14 @@ public class QuestionDetailActivity extends AppCompatActivity {
     private int Flag = 0;
     //////
     private QuestionDetailListAdapter mAdapter;
+    private QuestionDetailListAdapter2 mAdapter2;///---///
 
     private DatabaseReference mAnswerRef;
     private DatabaseReference FavoriteRef;
+
+    /////
+    private DatabaseReference QuestionRef;
+    ////
 
     private ChildEventListener mEventListener = new ChildEventListener() {
         @Override
@@ -53,7 +60,7 @@ public class QuestionDetailActivity extends AppCompatActivity {
 
             String answerUid = dataSnapshot.getKey();
 
-            for(Answer answer : mQuestion.getAnswers()) {
+            for (Answer answer : mQuestion.getAnswers()) {
                 // 同じAnswerUidのものが存在しているときは何もしない
                 if (answerUid.equals(answer.getAnswerUid())) {
                     return;
@@ -69,7 +76,12 @@ public class QuestionDetailActivity extends AppCompatActivity {
             Answer answer = new Answer(body, name, uid, answerUid);
             // 回答データを質問データに追加
             mQuestion.getAnswers().add(answer);
-            mAdapter.notifyDataSetChanged();
+
+            if (mQuestion.getGenre() == 1 || mQuestion.getGenre() == 2) {///---///
+                mAdapter.notifyDataSetChanged();
+            } else if (mQuestion.getGenre() == 3 || mQuestion.getGenre() == 4) {///---///
+                mAdapter2.notifyDataSetChanged();
+            }///---///
         }
 
         @Override
@@ -103,14 +115,21 @@ public class QuestionDetailActivity extends AppCompatActivity {
         mQuestion = (Question) extras.get("question");
         mFavorite = (ArrayList<Favorite>) extras.get("favorite");
 
-        //setTitle(mQuestion.getTitle());
-        setTitle("");/////////
+        setTitle(mQuestion.getTitle());
+        //setTitle("");/////////
 
         // ListViewの準備
         mListView = (ListView) findViewById(R.id.listView);
-        mAdapter = new QuestionDetailListAdapter(this, mQuestion);
-        mListView.setAdapter(mAdapter);
-        mAdapter.notifyDataSetChanged();
+
+        if (mQuestion.getGenre() == 1 || mQuestion.getGenre() == 2) {///---///
+            mAdapter = new QuestionDetailListAdapter(this, mQuestion);
+            mListView.setAdapter(mAdapter);
+            mAdapter.notifyDataSetChanged();
+        } else if (mQuestion.getGenre() == 3 || mQuestion.getGenre() == 4) {///---///
+            mAdapter2 = new QuestionDetailListAdapter2(this, mQuestion);
+            mListView.setAdapter(mAdapter2);
+            mAdapter2.notifyDataSetChanged();
+        }///---///
 
         // buttonの準備
         mFavoriteButton = (Button) findViewById(R.id.favorite);
@@ -124,12 +143,12 @@ public class QuestionDetailActivity extends AppCompatActivity {
             // ログインしていなければmFavoriteButton無効
             mFavoriteButton.setVisibility(View.INVISIBLE);
             mFavoriteButton.setEnabled(false);
-        }else {
+        } else {
             // ログインしていればmFavoriteButton有効
             mFavoriteButton.setVisibility(View.VISIBLE);
             mFavoriteButton.setEnabled(true);
 
-            for (Favorite favorite:mFavorite) {
+            for (Favorite favorite : mFavorite) {
                 // お気に入りデータに自身と同じQuestionUidがあれば
                 if (favorite.getQuestionUid().equals(mQuestion.getQuestionUid())) {
                     mFavoriteButton.setText("★");
@@ -140,12 +159,11 @@ public class QuestionDetailActivity extends AppCompatActivity {
         }
 
 
-
         mFavoriteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (Flag == 1) {
-                // mFavoriteButtonが★状態なら
+                    // mFavoriteButtonが★状態なら
                     for (Favorite favorite : mFavorite) {
                         // お気に入りデータに自身と同じQuestionUidがあれば自身をお気に入りデータから削除
                         if (favorite.getQuestionUid().equals(mQuestion.getQuestionUid())) {
@@ -156,7 +174,7 @@ public class QuestionDetailActivity extends AppCompatActivity {
                             return;
                         }
                     }
-                }else {
+                } else {
                     // mFavoriteButtonが☆状態なら新しく自身のQuestionUid追加
                     String key = FavoriteRef.push().getKey();
                     Map<String, Object> data = new HashMap<String, Object>();
@@ -194,4 +212,39 @@ public class QuestionDetailActivity extends AppCompatActivity {
         mAnswerRef = dataBaseReference.child(Const.ContentsPATH).child(String.valueOf(mQuestion.getGenre())).child(mQuestion.getQuestionUid()).child(Const.AnswersPATH);
         mAnswerRef.addChildEventListener(mEventListener);
     }
+
+    ///////
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_remove, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_remove) {
+            DatabaseReference dataBaseReference = FirebaseDatabase.getInstance().getReference();
+            QuestionRef = dataBaseReference.child(Const.ContentsPATH).child(String.valueOf(mQuestion.getGenre())).child(mQuestion.getQuestionUid());
+            QuestionRef.removeValue();
+
+            for (Favorite favorite : mFavorite) {
+                // お気に入りデータに自身と同じQuestionUidがあれば自身をお気に入りデータから削除
+                if (favorite.getQuestionUid().equals(mQuestion.getQuestionUid())) {
+                    mFavorite.remove(favorite);
+                    FavoriteRef.child(favorite.getFavoriteUid()).removeValue();
+                    Flag = 0;
+                    break;
+                }
+            }
+
+            finish();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+    ////////
 }

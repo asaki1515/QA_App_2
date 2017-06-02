@@ -129,7 +129,7 @@
                 android:inputType="textMultiLine"
                 android:maxLines="10"
                 android:gravity="top"
-                android:hint="ファイル名を５文字以上で入力"
+                android:hint="ファイルの説明"
                 android:layout_below="@+id/PDFtextView"
                 android:layout_alignParentStart="true"/>
 

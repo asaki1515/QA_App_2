@@ -13,6 +13,8 @@ public class Question implements Serializable {
     private String mUrl;////////
     private String mLink;/////
     private String mFileName;//----
+    private String mFile;
+    private String mVideo;///----///
 
     private int mGenre;   // 質問のジャンル
     private byte[] mBitmapArray;   // Firebaseから取得した画像をbyte型の配列にしたもの
@@ -50,6 +52,14 @@ public class Question implements Serializable {
         return mFileName;
     }
 
+    public String getFile(){
+        return mFile;
+
+    }
+    public String getVideo(){
+        return mVideo;
+    }
+
     public int getGenre() {
         return mGenre;
     }
@@ -62,14 +72,16 @@ public class Question implements Serializable {
         return mAnswerArrayList;
     }
 
-    public Question(String title, String body, String name, String uid, String questionUid, String link, String url, String fileName, int genre, byte[] bytes, ArrayList<Answer> answers) {
+    public Question(String title, String body, String name, String uid, String questionUid, String video, String link, String url, String fileName, String file, int genre, byte[] bytes, ArrayList<Answer> answers) {
         mTitle = title;
         mBody = body;
         mName = name;
         mUid = uid;
         mQuestionUid = questionUid;
+        mVideo = video;
         mLink = link;
         mUrl = url;
+        mFile = file;
         mFileName = fileName;
         mGenre = genre;
         mBitmapArray = bytes.clone();

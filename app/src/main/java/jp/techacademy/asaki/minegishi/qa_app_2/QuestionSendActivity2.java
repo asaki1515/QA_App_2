@@ -46,7 +46,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-public class QuestionSendActivity extends AppCompatActivity implements View.OnClickListener, DatabaseReference.CompletionListener {
+public class QuestionSendActivity2 extends AppCompatActivity implements View.OnClickListener, DatabaseReference.CompletionListener {
 
     private static final int PERMISSIONS_REQUEST_CODE = 100;
     private static final int PERMISSIONS_REQUEST_CODE2 = 101;
@@ -59,6 +59,7 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
     private EditText mLink;///////
     private EditText mURLText;////////
     private EditText mPDFText;//////
+    private EditText mVideoText;///---///
     private ImageView mImageView;
     private Button mSendButton;
     private Button mPDFButton;//----
@@ -77,7 +78,7 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_question_send);
+        setContentView(R.layout.activity_question_send2);
 
         // 渡ってきたジャンルの番号を保持する
 
@@ -88,13 +89,14 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
         mGenre = extras.getInt("genre");
 
         // UIの準備
-        setTitle("作り方作成");
+        setTitle("動画紹介作成");
 
         mTitleText = (EditText) findViewById(R.id.titleText);
         mBodyText = (EditText) findViewById(R.id.bodyText);
         mLink = (EditText) findViewById(R.id.linkEditText);/////
         mURLText = (EditText) findViewById(R.id.urlEditText);//////
         mPDFText = (EditText) findViewById(R.id.PDFEditText);//----
+        mVideoText = (EditText) findViewById(R.id.videoText);////----////
 
         mSendButton = (Button) findViewById(R.id.sendButton);
         mSendButton.setOnClickListener(this);
@@ -172,7 +174,8 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
                 mPDFText.setEnabled(false);
                 mPDFText.setFocusable(false);
 
-                fileName = RandomStringUtils.randomAlphanumeric(20);
+
+               fileName = RandomStringUtils.randomAlphanumeric(20);
 
                 /////
                 riversRef = storageRef.child(fileName);/////
@@ -214,7 +217,7 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
 
                     return;
                 }
-            // Android 5系以下の場合
+                // Android 5系以下の場合
             } else {
                 showChooser();
             }
@@ -236,26 +239,32 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
             String body = mBodyText.getText().toString();
             String link = mLink.getText().toString();
             String url = mURLText.getText().toString();
+            String video = mVideoText.getText().toString();
 
-                if (title.length() == 0) {
-                    // 質問が入力されていない時はエラーを表示するだけ
-                    Snackbar.make(v, "タイトルを入力して下さい", Snackbar.LENGTH_LONG).show();
-                    return;
-                }
+            if (title.length() == 0) {
+                // 質問が入力されていない時はエラーを表示するだけ
+                Snackbar.make(v, "タイトルを入力して下さい", Snackbar.LENGTH_LONG).show();
+                return;
+            }
 
-                if (body.length() == 0) {
-                    // 質問が入力されていない時はエラーを表示するだけ
-                    Snackbar.make(v, "説明を入力して下さい", Snackbar.LENGTH_LONG).show();
-                    return;
-                }
+            if (body.length() == 0) {
+                // 質問が入力されていない時はエラーを表示するだけ
+                Snackbar.make(v, "説明を入力して下さい", Snackbar.LENGTH_LONG).show();
+                return;
+            }
 
-                if (mFile.length() == 0){
-                    mFile = "";
-                }
-                // ファイル名は指定したものの、ファイルをアップロードしなかった場合はファイル名削除
-                if (mFileCheck == 0){
-                    mFile = "";
-                }
+            if (mFile.length() == 0){
+                mFile = "";
+            }
+            // ファイル説明は記載したものの、ファイルをアップロードしなかった場合はファイル名削除
+            if (mFileCheck == 0){
+                mFile = "";
+            }
+
+            if (video.length() == 0) {
+                Snackbar.make(v, "動画IDを入力して下さい", Snackbar.LENGTH_LONG).show();
+                return;
+            }
 
 
             // Preferenceから名前を取る
@@ -269,28 +278,28 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
             data.put("url", url);//////
             data.put("fileName", fileName);/////
             data.put("file", mFile);
-            data.put("video", "");////----////
+            data.put("video", video);
 
             // 添付画像を取得する
             BitmapDrawable drawable = (BitmapDrawable) mImageView.getDrawable();
 
-                // 添付画像が設定されていれば画像を取り出してBASE64エンコードする
-                if (drawable != null) {
-                    // Bitmapで画像取得
-                    Bitmap bitmap = drawable.getBitmap();
+            // 添付画像が設定されていれば画像を取り出してBASE64エンコードする
+            if (drawable != null) {
+                // Bitmapで画像取得
+                Bitmap bitmap = drawable.getBitmap();
 
-                    // バイト配列出力ストリーム(→データをバイト単位で読み書きできるもの)作成
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                // バイト配列出力ストリーム(→データをバイト単位で読み書きできるもの)作成
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-                    // compress:ビットマップの圧縮したバージョンを指定された出力ストリームに書き込む
-                    // compress( Bitmap.CompressFormat format, int quality（品質）, OutputStream stream)
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos);
+                // compress:ビットマップの圧縮したバージョンを指定された出力ストリームに書き込む
+                // compress( Bitmap.CompressFormat format, int quality（品質）, OutputStream stream)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos);
 
-                    // 指定されたデータをBase64（データを文字列に変換する仕組み）でエンコードし、その結果で新たに割り当てられたStringを返す
-                    String bitmapString = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
+                // 指定されたデータをBase64（データを文字列に変換する仕組み）でエンコードし、その結果で新たに割り当てられたStringを返す
+                String bitmapString = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
 
-                    data.put("image", bitmapString);
-                }
+                data.put("image", bitmapString);
+            }
 
             // dataをFireBaseに保存
             // 保存が完了したタイミングで何か処理を差し込みたい場合、第2引数にはCompletionListenerクラスを指定

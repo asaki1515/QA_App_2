@@ -3,20 +3,32 @@ package jp.techacademy.asaki.minegishi.qa_app_2;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.net.Uri;
+import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
+import android.webkit.WebStorage;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+
+
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -24,7 +36,7 @@ import com.google.firebase.storage.StorageReference;
 import java.io.File;
 import java.io.IOException;
 
-public class QuestionDetailListAdapter extends BaseAdapter {
+public class QuestionDetailListAdapter2 extends BaseAdapter{
     private final static int TYPE_QUESTION = 0;
     private final static int TYPE_ANSWER = 1;
 
@@ -32,11 +44,18 @@ public class QuestionDetailListAdapter extends BaseAdapter {
     private Question mQustion;
 
     private TextView filelinkTextView;//-----
+
+    private WebView webView;
+    private WebChromeClient.CustomViewCallback customViewCallback;
+    private FrameLayout customViewContainer;
+    private View mCustomView;
+
     //private Button mfileButton;//-----
 
-    public QuestionDetailListAdapter(Context context, Question question) {
+    public QuestionDetailListAdapter2(Context context, Question question) {
         mLayoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         mQustion = question;
+
     }
 
     @Override
@@ -69,12 +88,13 @@ public class QuestionDetailListAdapter extends BaseAdapter {
         return 0;
     }
 
+
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
 
         if (getItemViewType(position) == TYPE_QUESTION) {
             if (convertView == null) {
-                convertView = mLayoutInflater.inflate(R.layout.list_question_detail, parent, false);
+                convertView = mLayoutInflater.inflate(R.layout.list_question_detail2, parent, false);
             }
             //String title = mQustion.getTitle();//////
             String body = mQustion.getBody();
@@ -83,9 +103,26 @@ public class QuestionDetailListAdapter extends BaseAdapter {
             String url = mQustion.getUrl();/////
             String fileName = mQustion.getFileName();//----
             String file = mQustion.getFile();
+            String video = mQustion.getVideo();////----/////
 
-            //TextView titleTextView = (TextView) convertView.findViewById(R.id.titleTextView);////
+
+           // TextView titleTextView = (TextView) convertView.findViewById(R.id.titleTextView);////
             //titleTextView.setText(title);/////
+            webView = (WebView) convertView.findViewById(R.id.myWebView);
+            WebViewClient mWebViewClient = new WebViewClient();
+            //リンクをタップしたときに標準ブラウザを起動させない
+            webView.setWebViewClient(mWebViewClient);
+
+            WebChromeClient mWebChromeClient = new myWebChromeClient();
+            webView.setWebChromeClient(mWebChromeClient);
+
+            webView.getSettings().setJavaScriptEnabled(true);
+            webView.getSettings().setAppCacheEnabled(true);
+            webView.getSettings().setBuiltInZoomControls(true);
+            webView.getSettings().setSaveFormData(true);
+            webView.loadUrl("https://www.youtube.com/watch?v="+ video);
+
+
 
             TextView bodyTextView = (TextView) convertView.findViewById(R.id.bodyTextView);
             bodyTextView.setText(body);
@@ -96,6 +133,7 @@ public class QuestionDetailListAdapter extends BaseAdapter {
             /////
             TextView fileTextView = (TextView) convertView.findViewById(R.id.fileTextView2);
             filelinkTextView = (TextView) convertView.findViewById(R.id.filelinkTextView);
+
 
             if (file.length() != 0) {
                 fileTextView.setText(file);
@@ -128,14 +166,16 @@ public class QuestionDetailListAdapter extends BaseAdapter {
             }else {
                 urlTextView.setText("なし");
             }
-            byte[] bytes = mQustion.getImageBytes();
+
+           /* byte[] bytes = mQustion.getImageBytes();
             if (bytes.length != 0) {
                 Bitmap image = BitmapFactory.decodeByteArray(bytes, 0, bytes.length).copy(Bitmap.Config.ARGB_8888, true);
                 ImageView imageView = (ImageView) convertView.findViewById(R.id.imageView);
                 imageView.setImageBitmap(image);
 
                 imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);////
-            }
+            }*/
+
         } else {
             if (convertView == null) {
                 convertView = mLayoutInflater.inflate(R.layout.list_answer, parent, false);
@@ -154,4 +194,43 @@ public class QuestionDetailListAdapter extends BaseAdapter {
 
         return convertView;
     }
+
+    /////
+    class myWebChromeClient extends WebChromeClient {
+
+        @Override
+        public void onShowCustomView(View view,CustomViewCallback callback) {
+            if (mCustomView != null) {
+                callback.onCustomViewHidden();
+                return;
+            }
+
+            final FrameLayout frame = ((FrameLayout) view);
+
+            final View v1 = frame.getChildAt(0);
+            view.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT, Gravity.CENTER));
+            v1.setOnKeyListener(new View.OnKeyListener() {
+
+                @Override
+                public boolean onKey(View v, int keyCode, KeyEvent event) {
+                    if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN) {
+                        onHideCustomView();
+                        return true;
+                    }
+                    return false;
+                }
+            });
+
+            mCustomView = view;
+            customViewContainer.setBackgroundColor(Color.BLACK);
+            customViewContainer.bringToFront();
+            webView.setVisibility(View.GONE);
+            customViewContainer.setVisibility(View.VISIBLE);
+
+            customViewContainer.addView(view);
+            customViewCallback = callback;
+        }
+    }
+    /////
 }
